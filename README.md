@@ -105,6 +105,20 @@ If Maven inside IntelliJ still uses an old JDK, set
 - Something else on 5433? `$env:DB_PORT=5434; docker compose up -d db` and start
   the app with `DB_URL=jdbc:postgresql://localhost:5434/eventmap`.
 
+No GUI needed — psql runs inside the already-running container:
+
+```powershell
+# interactive shell
+docker exec -it eventmap-db psql -U eventmap -d eventmap
+
+# one-off query
+docker exec eventmap-db psql -U eventmap -d eventmap -c "select count(*) from event;"
+```
+
+Application tables live in schema `public`; `tiger` and `topology` are PostGIS
+internals, ignore them. PostGIS columns are binary — cast them with
+`ST_AsText(location::geometry)` to read coordinates.
+
 Useful queries:
 
 ```sql
