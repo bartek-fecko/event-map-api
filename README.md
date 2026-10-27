@@ -95,8 +95,10 @@ If Maven inside IntelliJ still uses an old JDK, set
 - **IntelliJ Database tool** (Ultimate): **+ → Data Source → PostgreSQL**, paste
   the values above, **Test Connection → OK**.
 - Or the optional web GUI: `docker compose --profile tools up -d pgadmin` →
-  <http://localhost:5050> (`dev@eventmap.local` / `admin`), add a server with
-  host `db`, port `5432`.
+  <http://localhost:5050> (`dev@eventmap.dev` / `admin12345`). The server
+  **EventMap dev** is pre-created (host `db`, port `5432`, user `eventmap`) —
+  click it and enter the database password `eventmap`. pgAdmin 9 rejects
+  `.local` addresses, hence the `.dev` login.
 - Why 5433? A native PostgreSQL install (e.g. the Windows service
   `postgresql-x64-15`) usually owns 5432, and then `localhost:5432` may reach
   that server instead of the container — symptom: `password authentication

@@ -36,14 +36,17 @@ services:
     image: dpage/pgadmin4:9.18
     profiles: ["tools"]
     environment:
-      PGADMIN_DEFAULT_EMAIL: dev@eventmap.local
-      PGADMIN_DEFAULT_PASSWORD: admin
+      # .local is a reserved special-use domain and pgAdmin 9 rejects it.
+      PGADMIN_DEFAULT_EMAIL: dev@eventmap.dev
+      PGADMIN_DEFAULT_PASSWORD: admin12345
       PGADMIN_CONFIG_SERVER_MODE: "False"
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     ports:
       - "5050:80"
     volumes:
       - pgadmin-data:/var/lib/pgadmin
+      # Pre-created "EventMap dev" connection: host db:5432, user eventmap.
+      - ./tools/pgadmin/servers.json:/pgadmin4/servers.json:ro
     depends_on:
       db:
         condition: service_healthy
