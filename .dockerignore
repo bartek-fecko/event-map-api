@@ -1,0 +1,18 @@
+# Keep the build context small and reproducible. The Docker build only needs
+# pom.xml, .mvn/, mvnw and src/.
+target/
+.git/
+.gitignore
+.gitattributes
+.idea/
+.run/
+docs/
+data/
+tools/
+*.iml
+*.md
+.env
+.env.*
+compose.yaml
+compose.prod.yaml
+Caddyfile

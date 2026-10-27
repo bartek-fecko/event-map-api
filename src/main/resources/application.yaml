@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: event-map-api
+  datasource:
+    # Local dev DB is published on host 5433 by compose.yaml (5432 is often
+    # taken by a native PostgreSQL service). Production sets DB_URL explicitly.
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/eventmap}
+    username: ${DB_USER:eventmap}
+    password: ${DB_PASSWORD:eventmap}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  compression:
+    enabled: true
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  security:
+    jwt-secret: ${JWT_SECRET:}
+    access-token-ttl: 15m
+    refresh-token-ttl: 14d
+  auth:
+    rate-limit-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:20}
+  admin:
+    bootstrap-email: ${ADMIN_EMAIL:}
+    bootstrap-password: ${ADMIN_PASSWORD:}
+  media:
+    storage-dir: ${MEDIA_DIR:./data/media}
+    public-base-url: /media
+  map:
+    max-results: 500
+    cluster-max-zoom: 12
+  web:
+    allowed-origins:
+      - http://localhost:3000

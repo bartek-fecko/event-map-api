@@ -1,0 +1,53 @@
+# Local development: only the database runs in Docker, the application runs
+# from IntelliJ (or ./mvnw spring-boot:run) so you get breakpoints and hot reload.
+#
+#   docker compose up -d db
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+#
+# Optional GUI: docker compose --profile tools up -d pgadmin  ->  http://localhost:5050
+name: eventmap
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    container_name: eventmap-db
+    environment:
+      POSTGRES_DB: eventmap
+      POSTGRES_USER: eventmap
+      # Matches the defaults in application-local.yaml. Change both together.
+      POSTGRES_PASSWORD: eventmap
+    ports:
+      # 5433 on the host on purpose: a native Windows PostgreSQL service often
+      # already listens on 5432, and then "localhost:5432" is a coin flip
+      # between that server and this container. Override with DB_PORT.
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # -h 127.0.0.1 matters: without it pg_isready talks to the Unix socket,
+      # which answers during initdb before the server accepts TCP connections.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U eventmap -d eventmap"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:9.18
+    profiles: ["tools"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: dev@eventmap.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  pgadmin-data:

@@ -1,0 +1,90 @@
+# Single-server production stack: PostGIS + API + Caddy (TLS, static media).
+#
+#   cp .env.example .env   # then fill in every secret
+#   docker compose -f compose.prod.yaml up -d --build
+#
+# Point a DNS A/AAAA record for $DOMAIN at this host first: Caddy needs to
+# reach Let's Encrypt to issue the certificate.
+name: eventmap-prod
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    container_name: eventmap-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-eventmap}
+      POSTGRES_USER: ${DB_USER:-eventmap}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # TCP probe on purpose: the socket answers during initdb, before the
+      # server is reachable from other containers.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  app:
+    image: ${APP_IMAGE:-eventmap-api:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eventmap-api
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-eventmap}
+      DB_USER: ${DB_USER:-eventmap}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      # A short secret makes JwtService throw at startup on purpose.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      AUTH_RATE_LIMIT_PER_MINUTE: ${AUTH_RATE_LIMIT_PER_MINUTE:-20}
+      APP_WEB_ALLOWED_ORIGINS: ${APP_WEB_ALLOWED_ORIGINS:-http://localhost:3000}
+      MEDIA_DIR: /app/data/media
+    volumes:
+      # Caddy serves the same volume read-only at /srv/media.
+      - media-data:/app/data/media
+    expose:
+      - "8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # The runtime image has no curl/wget; opening the port is enough to know
+      # the servlet container is accepting connections.
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.11-alpine
+    container_name: eventmap-caddy
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - media-data:/srv/media:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  media-data:
+  caddy-data:
+  caddy-config:

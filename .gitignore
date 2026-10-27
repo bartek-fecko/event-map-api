@@ -1,0 +1,21 @@
+# Build output
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Local data and secrets
+.env
+.env.*
+!.env.example
+data/
+*.log
+
+# OS noise
+.DS_Store
+Thumbs.db

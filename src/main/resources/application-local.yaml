@@ -1,0 +1,25 @@
+# Local development profile: PostGIS from compose.yaml, app run from IntelliJ.
+# Everything here is a public, non-secret default.
+spring:
+  datasource:
+    # 5433 locally (see compose.yaml); production compose sets DB_URL explicitly.
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/eventmap}
+    username: ${DB_USER:eventmap}
+    password: ${DB_PASSWORD:eventmap}
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    pl.eventmap: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.web.servlet.mvc.method.annotation: INFO
+
+app:
+  security:
+    jwt-secret: ${JWT_SECRET:local-only-dev-secret-please-do-not-use-in-production-0123456789}
+  admin:
+    bootstrap-email: ${ADMIN_EMAIL:admin@eventmap.local}
+    bootstrap-password: ${ADMIN_PASSWORD:admin12345}
