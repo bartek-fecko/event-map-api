@@ -33,6 +33,37 @@ Then:
 - Health: <http://localhost:8080/actuator/health>
 - Demo admin: `admin@eventmap.local` / `admin12345`
 
+## Is it working?
+
+With the app running, one command checks the whole stack end to end:
+
+```powershell
+.\tools\check-local.ps1              # health, seed data, map, errors, login, create, upload
+.\tools\check-local.ps1 -ReadOnly    # skips the three write checks
+```
+
+It prints one line per check and exits `0` when everything passes, `1` when a
+check fails, `2` when nothing listens on `http://localhost:8080` (use `-BaseUrl`
+to check another host/port). A full run writes one published event named
+`Check run <date>` and one 1×1 PNG, so delete the event afterwards if you care
+about a tidy dev database.
+
+Manual spot checks:
+
+```powershell
+curl.exe -s http://localhost:8080/actuator/health
+curl.exe -s "http://localhost:8080/api/v1/map/events?bbox=19.85,50.02,20.05,50.10&zoom=13"   # events
+curl.exe -s "http://localhost:8080/api/v1/map/events?bbox=19.85,50.02,20.05,50.10&zoom=8"    # clusters
+curl.exe -s http://localhost:8080/api/v1/cities
+```
+
+And on the database side (`docker compose ps` should show `eventmap-db` healthy):
+
+```powershell
+docker exec eventmap-db psql -U eventmap -d eventmap -c "select version, description, success from flyway_schema_history;"
+docker exec eventmap-db psql -U eventmap -d eventmap -c "select status, count(*) from event group by status;"
+```
+
 `docker compose stop` keeps the data volume; `docker compose down -v` deletes it
 and you get a fresh migrated + seeded database on the next start.
 
