@@ -95,10 +95,16 @@ If Maven inside IntelliJ still uses an old JDK, set
 - **IntelliJ Database tool** (Ultimate): **+ → Data Source → PostgreSQL**, paste
   the values above, **Test Connection → OK**.
 - Or the optional web GUI: `docker compose --profile tools up -d pgadmin` →
-  <http://localhost:5050> (`dev@eventmap.dev` / `admin12345`). The server
-  **EventMap dev** is pre-created (host `db`, port `5432`, user `eventmap`) —
-  click it and enter the database password `eventmap`. pgAdmin 9 rejects
+  <http://localhost:5050> (login `dev@eventmap.dev` / `admin12345`). The server
+  **EventMap dev** is pre-created (host `db`, port `5432`), so just click it and
+  answer the *second* prompt, `Please enter the password for the user
+  'eventmap'`, with `eventmap`. Two different passwords: the first one is for
+  pgAdmin itself, `eventmap` is for PostgreSQL — mixing them up gives
+  `password authentication failed for user "eventmap"`. pgAdmin 9 rejects
   `.local` addresses, hence the `.dev` login.
+  Broken saved state? `docker compose --profile tools rm -sf pgadmin`, then
+  `docker volume rm eventmap_pgadmin-data`, then
+  `docker compose --profile tools up -d pgadmin`.
 - Why 5433? A native PostgreSQL install (e.g. the Windows service
   `postgresql-x64-15`) usually owns 5432, and then `localhost:5432` may reach
   that server instead of the container — symptom: `password authentication
